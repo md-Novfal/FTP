@@ -1,26 +1,10 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const ChatMessage = sequelize.define('ChatMessage', {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true,
-  },
-  roomId: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  senderId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-  },
-  message: DataTypes.TEXT,
-  readAt: DataTypes.DATE,
-}, {
-  tableName: 'chat_messages',
-  timestamps: true,
-  underscored: true,
-});
+const chatMessageSchema = new mongoose.Schema({
+  roomId: { type: String, required: true, index: true },
+  senderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  message: String,
+  readAt: Date,
+}, { timestamps: true });
 
-module.exports = ChatMessage;
+module.exports = mongoose.model('ChatMessage', chatMessageSchema);

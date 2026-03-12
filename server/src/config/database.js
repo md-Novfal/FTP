@@ -1,24 +1,10 @@
-const { Sequelize } = require('sequelize');
+const mongoose = require('mongoose');
 const logger = require('./logger');
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASSWORD,
-  {
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    dialect: 'postgres',
-    logging: (msg) => {
-      if (process.env.NODE_ENV === 'development') logger.debug(msg);
-    },
-    pool: {
-      max: 10,
-      min: 0,
-      acquire: 30000,
-      idle: 10000,
-    },
-  }
-);
+const connectDB = async () => {
+  const uri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/fto_db';
+  await mongoose.connect(uri);
+  logger.info(`MongoDB connected: ${mongoose.connection.host}`);
+};
 
-module.exports = { sequelize };
+module.exports = connectDB;

@@ -1,23 +1,12 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const AuditLog = sequelize.define('AuditLog', {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true,
-  },
-  userId: DataTypes.UUID,
-  action: DataTypes.STRING,
-  resource: DataTypes.STRING,
-  resourceId: DataTypes.UUID,
-  ipAddress: DataTypes.STRING,
-  userAgent: DataTypes.STRING,
-}, {
-  tableName: 'audit_logs',
-  timestamps: true,
-  underscored: true,
-  updatedAt: false,
-});
+const auditLogSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  action: String,
+  resource: String,
+  resourceId: mongoose.Schema.Types.ObjectId,
+  ipAddress: String,
+  userAgent: String,
+}, { timestamps: { createdAt: true, updatedAt: false } });
 
-module.exports = AuditLog;
+module.exports = mongoose.model('AuditLog', auditLogSchema);

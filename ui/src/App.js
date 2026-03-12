@@ -1,8 +1,5 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-
-import { selectCurrentUser } from './store/slices/authSlice';
 
 // Layouts
 import PublicLayout from './layouts/PublicLayout';
@@ -31,8 +28,6 @@ import StudentApplications from './pages/student/StudentApplications';
 import ProtectedRoute from './components/common/ProtectedRoute';
 
 function App() {
-  const user = useSelector(selectCurrentUser);
-
   return (
     <Routes>
       {/* Public routes */}

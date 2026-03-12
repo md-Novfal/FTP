@@ -1,31 +1,12 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const Commission = sequelize.define('Commission', {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true,
-  },
-  agencyId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-  },
-  applicationId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-  },
-  amount: DataTypes.DECIMAL(12, 2),
-  status: {
-    type: DataTypes.ENUM('pending', 'approved', 'paid'),
-    defaultValue: 'pending',
-  },
-  approvedAt: DataTypes.DATE,
-  approvedBy: DataTypes.UUID,
-}, {
-  tableName: 'commissions',
-  timestamps: true,
-  underscored: true,
-});
+const commissionSchema = new mongoose.Schema({
+  agencyId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  applicationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Application', required: true },
+  amount: Number,
+  status: { type: String, enum: ['pending', 'approved', 'paid'], default: 'pending' },
+  approvedAt: Date,
+  approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+}, { timestamps: true });
 
-module.exports = Commission;
+module.exports = mongoose.model('Commission', commissionSchema);

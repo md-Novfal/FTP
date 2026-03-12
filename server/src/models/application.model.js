@@ -1,49 +1,20 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
 const APPLICATION_STATUSES = [
-  'apply',
-  'under_review',
-  'college_submitted',
-  'offer_letter',
-  'interview',
-  'admission_letter',
-  'ministry_order',
-  'vfs',
-  'visa',
-  'ticket',
-  'arrived',
-  'rejected',
-  'on_hold',
+  'apply', 'under_review', 'college_submitted', 'offer_letter',
+  'interview', 'admission_letter', 'ministry_order', 'vfs',
+  'visa', 'ticket', 'arrived', 'rejected', 'on_hold',
 ];
 
-const Application = sequelize.define('Application', {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true,
-  },
-  userId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-  },
-  agencyId: {
-    type: DataTypes.UUID,
-    allowNull: true,
-  },
-  universityName: DataTypes.STRING,
-  courseName: DataTypes.STRING,
-  countryName: DataTypes.STRING,
-  status: {
-    type: DataTypes.ENUM(...APPLICATION_STATUSES),
-    defaultValue: 'apply',
-  },
-  adminNote: DataTypes.TEXT,
-  submittedAt: DataTypes.DATE,
-}, {
-  tableName: 'applications',
-  timestamps: true,
-  underscored: true,
-});
+const applicationSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  agencyId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  universityName: String,
+  courseName: String,
+  countryName: String,
+  status: { type: String, enum: APPLICATION_STATUSES, default: 'apply' },
+  adminNote: String,
+  submittedAt: Date,
+}, { timestamps: true });
 
-module.exports = Application;
+module.exports = mongoose.model('Application', applicationSchema);

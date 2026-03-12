@@ -1,37 +1,19 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const Document = sequelize.define('Document', {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true,
-  },
-  applicationId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-  },
+const documentSchema = new mongoose.Schema({
+  applicationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Application', required: true },
   docType: {
-    type: DataTypes.ENUM(
-      'aadhar', 'pan', 'passport', 'birth_certificate',
-      'tenth_marksheet', 'twelfth_marksheet', 'neet_scorecard',
-      'ug_degree', 'other'
-    ),
-    allowNull: false,
+    type: String,
+    enum: ['aadhar', 'pan', 'passport', 'birth_certificate',
+           'tenth_marksheet', 'twelfth_marksheet', 'neet_scorecard', 'ug_degree', 'other'],
+    required: true,
   },
-  fileName: DataTypes.STRING,
-  s3Key: DataTypes.STRING,
-  mimeType: DataTypes.STRING,
-  verifiedByAdmin: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-  },
-  verifiedAt: DataTypes.DATE,
-  verifiedBy: DataTypes.UUID,
-}, {
-  tableName: 'documents',
-  timestamps: true,
-  underscored: true,
-});
+  fileName: String,
+  s3Key: String,
+  mimeType: String,
+  verifiedByAdmin: { type: Boolean, default: false },
+  verifiedAt: Date,
+  verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+}, { timestamps: true });
 
-module.exports = Document;
+module.exports = mongoose.model('Document', documentSchema);

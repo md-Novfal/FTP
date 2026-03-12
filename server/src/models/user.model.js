@@ -1,40 +1,13 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const User = sequelize.define('User', {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true,
-  },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: true,
-    unique: true,
-  },
-  phone: {
-    type: DataTypes.STRING(15),
-    allowNull: false,
-    unique: true,
-  },
-  passwordHash: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  role: {
-    type: DataTypes.ENUM('admin', 'agency', 'student'),
-    allowNull: false,
-  },
-  status: {
-    type: DataTypes.ENUM('pending', 'active', 'inactive'),
-    defaultValue: 'pending',
-  },
-  otpCode: DataTypes.STRING,
-  otpExpiry: DataTypes.DATE,
-}, {
-  tableName: 'users',
-  timestamps: true,
-  underscored: true,
-});
+const userSchema = new mongoose.Schema({
+  email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
+  phone: { type: String, required: true, unique: true, trim: true },
+  passwordHash: { type: String, required: true },
+  role: { type: String, enum: ['admin', 'agency', 'student'], required: true },
+  status: { type: String, enum: ['pending', 'active', 'inactive'], default: 'pending' },
+  otpCode: String,
+  otpExpiry: Date,
+}, { timestamps: true });
 
-module.exports = User;
+module.exports = mongoose.model('User', userSchema);

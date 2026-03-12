@@ -1,43 +1,30 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const Profile = sequelize.define('Profile', {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true,
-  },
-  userId: {
-    type: DataTypes.UUID,
-    allowNull: false,
-  },
-  firstName: DataTypes.STRING,
-  lastName: DataTypes.STRING,
-  dateOfBirth: DataTypes.DATEONLY,
-  fatherName: DataTypes.STRING,
-  motherName: DataTypes.STRING,
-  aadharNumber: DataTypes.STRING,
-  panNumber: DataTypes.STRING,
-  passportNumber: DataTypes.STRING,
-  passportExpiry: DataTypes.DATEONLY,
-  address: DataTypes.TEXT,
-  city: DataTypes.STRING,
-  state: DataTypes.STRING,
-  country: DataTypes.STRING,
-  pincode: DataTypes.STRING,
+const profileSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+  firstName: String,
+  lastName: String,
+  dateOfBirth: Date,
+  fatherName: String,
+  motherName: String,
+  aadharNumber: String,
+  panNumber: String,
+  passportNumber: String,
+  passportExpiry: Date,
+  address: String,
+  city: String,
+  state: String,
+  country: String,
+  pincode: String,
   // Academic
-  tenthPercentage: DataTypes.DECIMAL(5, 2),
-  twelfthPercentage: DataTypes.DECIMAL(5, 2),
-  neetScore: DataTypes.INTEGER,
-  ugDegree: DataTypes.STRING,
-  ugPercentage: DataTypes.DECIMAL(5, 2),
+  tenthPercentage: Number,
+  twelfthPercentage: Number,
+  neetScore: Number,
+  ugDegree: String,
+  ugPercentage: Number,
   // Preferences
-  preferredCountries: DataTypes.ARRAY(DataTypes.STRING),
-  preferredCourses: DataTypes.ARRAY(DataTypes.STRING),
-}, {
-  tableName: 'profiles',
-  timestamps: true,
-  underscored: true,
-});
+  preferredCountries: [String],
+  preferredCourses: [String],
+}, { timestamps: true });
 
-module.exports = Profile;
+module.exports = mongoose.model('Profile', profileSchema);
