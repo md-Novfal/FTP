@@ -14,9 +14,13 @@ function LoginPage() {
 
   const onSubmit = async (data) => {
     const result = await dispatch(login(data));
+    console.log('[Login] result:', result);
     if (login.fulfilled.match(result)) {
-      const role = result.payload.user.role;
-      navigate(`/${role}`);
+      const role = result.payload?.user?.role;
+      console.log('[Login] role:', role);
+      if (role) navigate(`/${role}`);
+    } else {
+      console.log('[Login] failed payload:', result.payload);
     }
   };
 

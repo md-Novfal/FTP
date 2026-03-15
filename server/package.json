@@ -7,7 +7,9 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "test": "mocha --recursive tests/ --exit",
-    "lint": "eslint src/"
+    "lint": "eslint src/",
+    "seed": "node src/scripts/seed.js",
+    "seed:demo": "node src/scripts/seedDemo.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

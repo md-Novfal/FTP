@@ -25,10 +25,19 @@ export const verifyOtp = createAsyncThunk('auth/verifyOtp', async (data, { rejec
   }
 });
 
+const parseUser = () => {
+  try {
+    const raw = localStorage.getItem('fto_user');
+    return raw && raw !== 'undefined' ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    user: JSON.parse(localStorage.getItem('fto_user')) || null,
+    user: parseUser(),
     token: localStorage.getItem('fto_token') || null,
     loading: false,
     error: null,

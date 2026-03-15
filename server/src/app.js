@@ -9,6 +9,9 @@ const { errorHandler, notFound } = require('./middlewares/errorHandler');
 
 const app = express();
 
+// Trust proxy (required for express-rate-limit behind a reverse proxy/load balancer)
+app.set('trust proxy', 1);
+
 // Security headers
 app.use(helmet());
 
