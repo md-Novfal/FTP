@@ -7,8 +7,74 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 const register = async (req, res, next) => {
   try {
-    // TODO: Validate input, create student user, send OTP
-    res.status(201).json({ message: 'Registration initiated. Please verify OTP.' });
+    const { username, email, phone, password } = req.body;
+    
+    // Check if user already exists
+    const existing = await User.findOne({ $or: [{ username }, { email }, { phone }] });
+    if (existing) {
+      return res.status(400).json({ error: 'User with this username, email, or phone already exists.' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      username,
+      email,
+      phone,
+      passwordHash,
+      role: 'student',
+      status: 'pending', // Requires OTP verification for students
+    });
+
+    // TODO: Send OTP via Twilio
+    res.status(201).json({ 
+      message: 'Registration initiated. Please verify OTP.', 
+      user: { id: user._id, username: user.username, role: user.role } 
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const createUser = async (req, res, next) => {
+  try {
+    const { username, email, phone, password, role } = req.body;
+    const requesterRole = req.user.role;
+
+    // Role-based restrictions logic
+    if (requesterRole === 'super_admin') {
+      // super_admin can create 'admin' and 'agency'
+      if (!['admin', 'agency'].includes(role)) {
+        return res.status(403).json({ error: 'Super Admin can only create Admin or Agency roles.' });
+      }
+    } else if (requesterRole === 'admin') {
+      // admin can only create 'agency'
+      if (role !== 'agency') {
+        return res.status(403).json({ error: 'Admins can only create Agency roles.' });
+      }
+    } else {
+      return res.status(403).json({ error: 'Access denied. Unauthorized role creation.' });
+    }
+
+    // Check existing
+    const existing = await User.findOne({ $or: [{ username }, { email }, { phone }] });
+    if (existing) {
+      return res.status(400).json({ error: 'User already exists.' });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      username,
+      email,
+      phone,
+      passwordHash,
+      role,
+      status: 'active', // Direct creation by admin is active by default
+    });
+
+    res.status(201).json({
+      message: `User created successfully as ${role}`,
+      user: { id: user._id, username: user.username, role: user.role }
+    });
   } catch (err) {
     next(err);
   }
@@ -16,15 +82,13 @@ const register = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   try {
-    const { identifier, password } = req.body;
-    if (!identifier || !password) {
-      return res.status(400).json({ error: 'Identifier and password are required.' });
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required.' });
     }
 
-    // Match by email or phone
-    const user = await User.findOne({
-      $or: [{ email: identifier.toLowerCase() }, { phone: identifier }],
-    });
+    // Match by username
+    const user = await User.findOne({ username: username.toLowerCase() });
 
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials.' });
@@ -50,6 +114,7 @@ const login = async (req, res, next) => {
       token,
       user: {
         id: user._id,
+        username: user.username,
         email: user.email,
         phone: user.phone,
         role: user.role,
@@ -109,6 +174,7 @@ const logout = async (req, res, next) => {
 module.exports = {
   register,
   login,
+  createUser,
   verifyOtp,
   resendOtp,
   requestPasswordReset,

@@ -40,6 +40,7 @@ async function seed() {
     let user = await User.findOne({ email: a.email });
     if (!user) {
       user = await User.create({
+        username: a.email.split('@')[0],
         email: a.email,
         phone: a.phone,
         passwordHash: await hash('agency@123'),
@@ -47,24 +48,22 @@ async function seed() {
         status: 'active',
       });
       console.log(`Agency created: ${a.email}`);
+    } else if (!user.username) {
+      user.username = a.email.split('@')[0];
+      await user.save();
+      console.log(`Agency updated with username: ${user.username}`);
     }
     agencies.push(user);
   }
 
   // Create students
   const studentNames = [
-    { email: 'rahul@student.com', phone: '8000000001' },
-    { email: 'priya@student.com', phone: '8000000002' },
-    { email: 'arjun@student.com', phone: '8000000003' },
-    { email: 'neha@student.com', phone: '8000000004' },
-    { email: 'vikram@student.com', phone: '8000000005' },
-    { email: 'ananya@student.com', phone: '8000000006' },
-    { email: 'karan@student.com', phone: '8000000007' },
-    { email: 'sneha@student.com', phone: '8000000008' },
-    { email: 'rohit@student.com', phone: '8000000009' },
-    { email: 'divya@student.com', phone: '8000000010' },
-    { email: 'amit@student.com', phone: '8000000011' },
-    { email: 'pooja@student.com', phone: '8000000012' },
+    { name: 'Rahul Sharma', email: 'rahul@student.com', phone: '8000000001' },
+    { name: 'Priya Verma', email: 'priya@student.com', phone: '8000000002' },
+    { name: 'Arjun Singh', email: 'arjun@student.com', phone: '8000000003' },
+    { name: 'Neha Gupta', email: 'neha@student.com', phone: '8000000004' },
+    { name: 'Vikram Reddy', email: 'vikram@student.com', phone: '8000000005' },
+    { name: 'Ananya Das', email: 'ananya@student.com', phone: '8000000006' },
   ];
 
   const students = [];
@@ -72,6 +71,7 @@ async function seed() {
     let user = await User.findOne({ email: s.email });
     if (!user) {
       user = await User.create({
+        username: s.email.split('@')[0],
         email: s.email,
         phone: s.phone,
         passwordHash: await hash('student@123'),
@@ -79,6 +79,10 @@ async function seed() {
         status: 'active',
       });
       console.log(`Student created: ${s.email}`);
+    } else if (!user.username) {
+      user.username = s.email.split('@')[0];
+      await user.save();
+      console.log(`Student updated with username: ${user.username}`);
     }
     students.push(user);
   }
@@ -124,8 +128,8 @@ async function seed() {
   }
 
   console.log('\nDemo seed complete!');
-  console.log('Agencies: agency1@fto.edu / agency@123');
-  console.log('Students: rahul@student.com / student@123');
+  console.log('Agencies: agency1 / agency@123');
+  console.log('Students: rahul / student@123');
   await mongoose.disconnect();
 }
 
