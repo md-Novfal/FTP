@@ -10,17 +10,14 @@ function LoginPage() {
   const navigate = useNavigate();
   const loading = useSelector(selectAuthLoading);
   const error = useSelector(selectAuthError);
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit, formState: { errors } } = useForm();
 
   const onSubmit = async (data) => {
-    const result = await dispatch(login(data));
-    console.log('[Login] result:', result);
+    // Send username + password to the backend
+    const result = await dispatch(login({ username: data.username.trim(), password: data.password }));
     if (login.fulfilled.match(result)) {
       const role = result.payload?.user?.role;
-      console.log('[Login] role:', role);
-      if (role) navigate(`/${role}`);
-    } else {
-      console.log('[Login] failed payload:', result.payload);
+      if (role) navigate(role === 'super_admin' ? '/admin' : `/${role}`);
     }
   };
 
@@ -31,8 +28,24 @@ function LoginPage() {
           <Typography variant="h5" fontWeight={700} mb={3} textAlign="center">Sign In</Typography>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <Box component="form" onSubmit={handleSubmit(onSubmit)} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <TextField label="Phone / Email" {...register('identifier', { required: true })} fullWidth />
-            <TextField label="Password" type="password" {...register('password', { required: true })} fullWidth />
+            <TextField
+              label="Username"
+              {...register('username', { required: 'Username is required' })}
+              error={!!errors.username}
+              helperText={errors.username?.message}
+              fullWidth
+              autoComplete="username"
+              autoFocus
+            />
+            <TextField
+              label="Password"
+              type="password"
+              {...register('password', { required: 'Password is required' })}
+              error={!!errors.password}
+              helperText={errors.password?.message}
+              fullWidth
+              autoComplete="current-password"
+            />
             <Button type="submit" variant="contained" fullWidth disabled={loading} size="large">
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>

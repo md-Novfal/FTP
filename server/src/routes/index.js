@@ -9,9 +9,11 @@ const notificationRoutes = require('./notification.routes');
 const adminRoutes = require('./admin.routes');
 const commissionRoutes = require('./commission.routes');
 const chatRoutes = require('./chat.routes');
+const profileRoutes = require('./profile.routes');
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
+router.use('/profile', profileRoutes);
 router.use('/applications', applicationRoutes);
 router.use('/documents', documentRoutes);
 router.use('/notifications', notificationRoutes);

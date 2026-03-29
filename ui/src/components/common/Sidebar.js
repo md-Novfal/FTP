@@ -5,14 +5,17 @@ import { useSelector } from 'react-redux';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import AssignmentIcon from '@mui/icons-material/Assignment';
-import ChatIcon from '@mui/icons-material/Chat';
-import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import PersonIcon from '@mui/icons-material/Person';
 
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import { selectSidebarOpen } from '../../store/slices/uiSlice';
 
 const MENU = {
+  super_admin: [
+    { label: 'Dashboard', icon: <DashboardIcon />, path: '/admin' },
+    { label: 'Users', icon: <PeopleIcon />, path: '/admin/users' },
+    { label: 'Applications', icon: <AssignmentIcon />, path: '/admin/applications' },
+  ],
   admin: [
     { label: 'Dashboard', icon: <DashboardIcon />, path: '/admin' },
     { label: 'Users', icon: <PeopleIcon />, path: '/admin/users' },
@@ -21,8 +24,6 @@ const MENU = {
   agency: [
     { label: 'Dashboard', icon: <DashboardIcon />, path: '/agency' },
     { label: 'Applications', icon: <AssignmentIcon />, path: '/agency/applications' },
-    { label: 'Commissions', icon: <MonetizationOnIcon />, path: '/agency/commissions' },
-    { label: 'Chat', icon: <ChatIcon />, path: '/agency/chat' },
   ],
   student: [
     { label: 'Dashboard', icon: <DashboardIcon />, path: '/student' },

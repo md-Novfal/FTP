@@ -72,6 +72,22 @@ const authSlice = createSlice({
       .addCase(register.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(verifyOtp.pending, (state) => { state.loading = true; state.error = null; })
+      .addCase(verifyOtp.fulfilled, (state, action) => {
+        state.loading = false;
+        // When Firebase OTP is enabled, the backend returns token + user on verification.
+        // Store them so the user is logged in automatically after verification.
+        if (action.payload?.token) {
+          state.token = action.payload.token;
+          state.user = action.payload.user;
+          localStorage.setItem('fto_token', action.payload.token);
+          localStorage.setItem('fto_user', JSON.stringify(action.payload.user));
+        }
+      })
+      .addCase(verifyOtp.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });

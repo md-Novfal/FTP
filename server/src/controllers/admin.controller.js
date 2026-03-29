@@ -14,8 +14,8 @@ const getAnalytics = async (req, res, next) => {
       Application.find()
         .sort({ createdAt: -1 })
         .limit(8)
-        .populate('userId', 'email')
-        .populate('agencyId', 'email'),
+        .populate('userId', 'username email phone')
+        .populate('agencyId', 'username email'),
     ]);
 
     const commissionTotal = commissions[0]?.total || 0;

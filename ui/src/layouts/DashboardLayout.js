@@ -1,4 +1,3 @@
-import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { Box, Toolbar } from '@mui/material';
 import { useSelector } from 'react-redux';
@@ -14,7 +13,7 @@ function DashboardLayout() {
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
-      <TopBar sidebarWidth={SIDEBAR_WIDTH} />
+      <TopBar />
       <Sidebar width={SIDEBAR_WIDTH} />
       <Box
         component="main"
