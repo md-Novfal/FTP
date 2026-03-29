@@ -19,13 +19,18 @@ function DashboardLayout() {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
           ml: sidebarOpen ? 0 : `-${SIDEBAR_WIDTH}px`,
-          transition: 'margin 0.2s',
+          transition: 'margin 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          backgroundColor: '#f9fafb',
+          minHeight: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         <Toolbar />
-        <Outlet />
+        <Box sx={{ px: 3, py: 2.5, flexGrow: 1 }}>
+          <Outlet />
+        </Box>
       </Box>
       <Snackbar />
     </Box>

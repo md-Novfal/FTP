@@ -1,5 +1,5 @@
 import React from 'react';
-import { Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar, Divider } from '@mui/material';
+import { Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar, Divider, Box, useTheme } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -33,6 +33,7 @@ const MENU = {
 };
 
 function Sidebar({ width }) {
+  const theme = useTheme();
   const user = useSelector(selectCurrentUser);
   const open = useSelector(selectSidebarOpen);
   const navigate = useNavigate();
@@ -47,24 +48,71 @@ function Sidebar({ width }) {
       sx={{
         width,
         flexShrink: 0,
-        '& .MuiDrawer-paper': { width, boxSizing: 'border-box' },
+        '& .MuiDrawer-paper': {
+          width,
+          boxSizing: 'border-box',
+          backgroundColor: '#ffffff',
+          borderRight: '1px solid #e2e8f0',
+          boxShadow: '2px 0 8px rgba(15, 23, 42, 0.04)',
+        },
       }}
     >
       <Toolbar />
-      <Divider />
-      <List>
-        {items.map((item) => (
-          <ListItem
-            button
-            key={item.path}
-            selected={location.pathname === item.path}
-            onClick={() => navigate(item.path)}
-          >
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.label} />
-          </ListItem>
-        ))}
-      </List>
+      <Divider sx={{ margin: '8px 0', borderColor: '#e2e8f0' }} />
+      <Box sx={{ px: 1.5, py: 2 }}>
+        <List sx={{ gap: 0.5, display: 'flex', flexDirection: 'column' }}>
+          {items.map((item) => {
+            const isSelected = location.pathname === item.path;
+            return (
+              <ListItem
+                button
+                key={item.path}
+                selected={isSelected}
+                onClick={() => navigate(item.path)}
+                sx={{
+                  borderRadius: 10,
+                  transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                  margin: '4px 0',
+                  '&.Mui-selected': {
+                    backgroundColor: 'rgba(5, 150, 105, 0.12)',
+                    color: 'secondary.main',
+                    fontWeight: 600,
+                    '&:hover': {
+                      backgroundColor: 'rgba(5, 150, 105, 0.18)',
+                    },
+                    '& .MuiListItemIcon-root': {
+                      color: 'secondary.main',
+                    },
+                  },
+                  '&:hover:not(.Mui-selected)': {
+                    backgroundColor: 'rgba(15, 23, 42, 0.05)',
+                  },
+                }}
+              >
+                <ListItemIcon
+                  sx={{
+                    minWidth: 40,
+                    color: isSelected ? 'secondary.main' : 'text.secondary',
+                    transition: 'color 0.2s ease',
+                  }}
+                >
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText
+                  primary={item.label}
+                  primaryTypographyProps={{
+                    sx: {
+                      fontSize: '0.95rem',
+                      fontWeight: isSelected ? 600 : 500,
+                      color: isSelected ? 'secondary.main' : 'text.primary',
+                    },
+                  }}
+                />
+              </ListItem>
+            );
+          })}
+        </List>
+      </Box>
     </Drawer>
   );
 }

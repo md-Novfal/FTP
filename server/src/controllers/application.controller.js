@@ -47,7 +47,15 @@ const create = async (req, res, next) => {
 const getAll = async (req, res, next) => {
   try {
     const { role, id: userId } = req.user;
-    const { status, page = 1, limit = 20 } = req.query;
+    const { status } = req.query;
+
+    // Support both skip/limit and page/limit pagination styles
+    let skip = parseInt(req.query.skip) || 0;
+    const limit = parseInt(req.query.limit) || 20;
+
+    if (!req.query.skip && req.query.page) {
+      skip = (parseInt(req.query.page) - 1) * limit;
+    }
 
     const filter = {};
 
@@ -63,15 +71,13 @@ const getAll = async (req, res, next) => {
       filter.status = status;
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
     const [applications, total] = await Promise.all([
       Application.find(filter)
         .populate('userId', 'username email phone')
         .populate('agencyId', 'username email')
         .sort({ createdAt: -1 })
         .skip(skip)
-        .limit(parseInt(limit)),
+        .limit(limit),
       Application.countDocuments(filter),
     ]);
 
@@ -111,31 +117,119 @@ const getById = async (req, res, next) => {
 };
 
 // ===========================================================================
-// PUT /applications/:id/status  — Admin updates application status
+// PUT /applications/:id  — Update application (students edit details, admin/agency update status)
 // ===========================================================================
-const updateStatus = async (req, res, next) => {
+const update = async (req, res, next) => {
   try {
     if (!checkValidation(req, res)) return;
 
-    const { status, adminNote, agencyId } = req.body;
-
+    const { universityName, courseName, countryName, status, adminNote } = req.body;
     const application = await Application.findById(req.params.id);
+
     if (!application) {
       return res.status(404).json({ error: 'Application not found.' });
     }
 
-    application.status = status;
-    if (adminNote !== undefined) application.adminNote = adminNote;
-    if (agencyId !== undefined) application.agencyId = agencyId;
+    // Students can only edit their own applications (and only certain fields before submission)
+    if (req.user.role === 'student') {
+      if (application.userId.toString() !== req.user.id) {
+        return res.status(403).json({ error: 'Access denied.' });
+      }
+      // Students can update basic info
+      if (universityName) application.universityName = universityName;
+      if (courseName) application.courseName = courseName;
+      if (countryName) application.countryName = countryName;
+    } else if (req.user.role === 'agency') {
+      // Agencies can only update applications assigned to them
+      if (application.agencyId?.toString() !== req.user.id) {
+        return res.status(403).json({ error: 'Access denied.' });
+      }
+      // Agencies can update status and add notes
+      if (status) application.status = status;
+      if (adminNote !== undefined) application.adminNote = adminNote;
+    } else if (req.user.role === 'admin' || req.user.role === 'super_admin') {
+      // Admins can update anything
+      if (universityName) application.universityName = universityName;
+      if (courseName) application.courseName = courseName;
+      if (countryName) application.countryName = countryName;
+      if (status) application.status = status;
+      if (adminNote !== undefined) application.adminNote = adminNote;
+    }
+
     await application.save();
 
     const updated = await Application.findById(application._id)
       .populate('userId', 'username email phone')
       .populate('agencyId', 'username email');
 
-    logger.info(`Application ${application._id} status → ${status} by admin=${req.user.id}`);
+    logger.info(`Application ${application._id} updated by user=${req.user.id}`);
+
+    res.json({ message: 'Application updated successfully.', application: updated });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ===========================================================================
+// PUT /applications/:id/status  — Admin/Agency updates application status
+// ===========================================================================
+const updateStatus = async (req, res, next) => {
+  try {
+    if (!checkValidation(req, res)) return;
+
+    const { status, adminNote } = req.body;
+    const application = await Application.findById(req.params.id);
+
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found.' });
+    }
+
+    // Agencies can only update applications assigned to them
+    if (req.user.role === 'agency' && application.agencyId?.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    application.status = status;
+    if (adminNote !== undefined) application.adminNote = adminNote;
+    await application.save();
+
+    const updated = await Application.findById(application._id)
+      .populate('userId', 'username email phone')
+      .populate('agencyId', 'username email');
+
+    logger.info(`Application ${application._id} status → ${status} by user=${req.user.id}`);
 
     res.json({ message: 'Status updated.', application: updated });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ===========================================================================
+// PUT /applications/:id/assign-agency  — Admin assigns agency to application
+// ===========================================================================
+const assignAgency = async (req, res, next) => {
+  try {
+    const { agencyId } = req.body;
+    if (!agencyId) {
+      return res.status(400).json({ error: 'Agency ID is required.' });
+    }
+
+    const application = await Application.findById(req.params.id);
+    if (!application) {
+      return res.status(404).json({ error: 'Application not found.' });
+    }
+
+    application.agencyId = agencyId;
+    await application.save();
+
+    const updated = await Application.findById(application._id)
+      .populate('userId', 'username email phone')
+      .populate('agencyId', 'username email');
+
+    logger.info(`Application ${application._id} assigned agency=${agencyId} by admin=${req.user.id}`);
+
+    res.json({ message: 'Agency assigned.', application: updated });
   } catch (err) {
     next(err);
   }
@@ -167,4 +261,102 @@ const getDocuments = async (req, res, next) => {
   }
 };
 
-module.exports = { create, getAll, getById, updateStatus, getDocuments };
+// ===========================================================================
+// GET /dashboard  — Student dashboard stats
+// ===========================================================================
+const getStudentDashboard = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const totalApplications = await Application.countDocuments({ userId });
+    const completedApplications = await Application.countDocuments({
+      userId,
+      status: { $in: ['visa', 'ticket', 'arrived'] },
+    });
+    const inProgressApplications = await Application.countDocuments({
+      userId,
+      status: { $nin: ['visa', 'ticket', 'arrived', 'rejected'] },
+    });
+
+    const recentApplications = await Application.find({ userId })
+      .sort({ createdAt: -1 })
+      .populate('agencyId', 'username email')
+      .lean();
+
+    res.json({
+      stats: {
+        totalApplications,
+        completedApplications,
+        inProgressApplications,
+      },
+      recentApplications,
+      total: totalApplications,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ===========================================================================
+// GET /agency/dashboard  — Agency dashboard stats
+// ===========================================================================
+const getAgencyDashboard = async (req, res, next) => {
+  try {
+    const agencyId = req.user.id;
+    const students = await Application.distinct('userId', { agencyId });
+    const applications = await Application.countDocuments({ agencyId });
+    const completed = await Application.countDocuments({
+      agencyId,
+      status: { $in: ['visa', 'ticket', 'arrived'] },
+    });
+    const successRate = applications > 0 ? Math.round((completed / applications) * 100) : 0;
+
+    const recentApplications = await Application.find({ agencyId })
+      .sort({ createdAt: -1 })
+      .populate('userId', 'username email phone')
+      .lean();
+
+    res.json({
+      stats: {
+        students: students.length,
+        applications,
+        successRate,
+      },
+      recentApplications,
+      total: applications,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ===========================================================================
+// GET /agency/applications  — List applications assigned to agency
+// ===========================================================================
+const getAgencyApplications = async (req, res, next) => {
+  try {
+    const agencyId = req.user.id;
+
+    // Support both skip/limit and page/limit pagination styles
+    let skip = parseInt(req.query.skip) || 0;
+    const limit = parseInt(req.query.limit) || 20;
+
+    if (!req.query.skip && req.query.page) {
+      skip = (parseInt(req.query.page) - 1) * limit;
+    }
+
+    const [applications, total] = await Promise.all([
+      Application.find({ agencyId })
+        .populate('userId', 'username email phone')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Application.countDocuments({ agencyId }),
+    ]);
+
+    res.json({ applications, total });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { create, getAll, getById, update, updateStatus, assignAgency, getDocuments, getStudentDashboard, getAgencyDashboard, getAgencyApplications };
