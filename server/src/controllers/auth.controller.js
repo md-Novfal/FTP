@@ -1,12 +1,12 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { validationResult } = require('express-validator');
-const User = require('../models/user.model');
-const { sendWelcomeCredentialsEmail } = require('../utils/mailer');
-const logger = require('../config/logger');
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { validationResult } = require("express-validator");
+const User = require("../models/user.model");
+const { sendWelcomeCredentialsEmail } = require("../utils/mailer");
+const logger = require("../config/logger");
 
-const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
+const JWT_SECRET = process.env.JWT_SECRET || "changeme";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 const SALT_ROUNDS = 10;
 
 // ---------------------------------------------------------------------------
@@ -25,7 +25,9 @@ const checkValidation = (req, res) => {
 // Helper: generate a signed JWT for a user
 // ---------------------------------------------------------------------------
 const signToken = (user) =>
-  jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
+    expiresIn: JWT_EXPIRES_IN,
+  });
 
 // ===========================================================================
 // POST /auth/register  — Student self-registration
@@ -47,15 +49,17 @@ const register = async (req, res, next) => {
 
     if (existing) {
       if (existing.username === username.toLowerCase()) {
-        return res.status(409).json({ error: 'Username is already taken.' });
+        return res.status(409).json({ error: "Username is already taken." });
       }
       if (email && existing.email === email.toLowerCase()) {
-        return res.status(409).json({ error: 'Email is already registered.' });
+        return res.status(409).json({ error: "Email is already registered." });
       }
       if (phone && existing.phone === phone) {
-        return res.status(409).json({ error: 'Phone number is already registered.' });
+        return res
+          .status(409)
+          .json({ error: "Phone number is already registered." });
       }
-      return res.status(409).json({ error: 'User already exists.' });
+      return res.status(409).json({ error: "User already exists." });
     }
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
@@ -65,22 +69,28 @@ const register = async (req, res, next) => {
       email: email ? email.toLowerCase() : undefined,
       phone: phone || undefined,
       passwordHash,
-      role: 'student',
-      status: 'pending', // Stays pending until phone OTP verification via Firebase on the frontend
+      role: "student",
+      status: "pending", // Stays pending until phone OTP verification via Firebase on the frontend
     });
 
     logger.info(`Student registered: ${user.username} (id=${user._id})`);
 
     res.status(201).json({
-      message: 'Registration successful. Please verify your phone number via OTP.',
-      user: { id: user._id, username: user.username, phone: user.phone, role: user.role },
+      message:
+        "Registration successful. Please verify your phone number via OTP.",
+      user: {
+        id: user._id,
+        username: user.username,
+        phone: user.phone,
+        role: user.role,
+      },
     });
   } catch (err) {
     if (err.code === 11000) {
       const field = Object.keys(err.keyPattern)[0];
       return res.status(409).json({ error: `${field} is already taken.` });
     }
-    logger.error('Registration error:', err);
+    logger.error("Registration error:", err);
     next(err);
   }
 };
@@ -97,16 +107,21 @@ const login = async (req, res, next) => {
     const user = await User.findOne({ username: username.toLowerCase() });
 
     if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials.' });
+      return res.status(401).json({ error: "Invalid credentials." });
     }
 
-    if (user.status !== 'active') {
-      return res.status(403).json({ error: 'Account is not active. Please verify your phone number or contact support.' });
+    if (user.status !== "active") {
+      return res
+        .status(403)
+        .json({
+          error:
+            "Account is not active. Please verify your phone number or contact support.",
+        });
     }
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
-      return res.status(401).json({ error: 'Invalid credentials.' });
+      return res.status(401).json({ error: "Invalid credentials." });
     }
 
     const token = signToken(user);
@@ -114,7 +129,7 @@ const login = async (req, res, next) => {
     logger.info(`Login: ${user.username} (role=${user.role})`);
 
     res.status(200).json({
-      message: 'Login successful',
+      message: "Login successful",
       token,
       user: {
         id: user._id,
@@ -141,16 +156,24 @@ const createUser = async (req, res, next) => {
     const requesterRole = req.user.role;
 
     // --- Role-based access control ---
-    if (requesterRole === 'super_admin') {
-      if (!['admin', 'agency'].includes(role)) {
-        return res.status(403).json({ error: 'Super Admin can only create Admin or Agency roles.' });
+    if (requesterRole === "super_admin") {
+      if (!["admin", "agency"].includes(role)) {
+        return res
+          .status(403)
+          .json({
+            error: "Super Admin can only create Admin or Agency roles.",
+          });
       }
-    } else if (requesterRole === 'admin') {
-      if (role !== 'agency') {
-        return res.status(403).json({ error: 'Admins can only create Agency roles.' });
+    } else if (requesterRole === "admin") {
+      if (role !== "agency") {
+        return res
+          .status(403)
+          .json({ error: "Admins can only create Agency roles." });
       }
     } else {
-      return res.status(403).json({ error: 'Access denied. Unauthorized role creation.' });
+      return res
+        .status(403)
+        .json({ error: "Access denied. Unauthorized role creation." });
     }
 
     // --- Check for existing user ---
@@ -161,8 +184,21 @@ const createUser = async (req, res, next) => {
         ...(phone ? [{ phone }] : []),
       ],
     });
+    console.log(existing);
     if (existing) {
-      return res.status(409).json({ error: 'A user with this username, email, or phone already exists.' });
+      if (existing.username === username.toLowerCase()) {
+        return res.status(409).json({ error: "Username already exists." });
+      }
+
+      if (email && existing.email === email.toLowerCase()) {
+        return res.status(409).json({ error: "Email already registered." });
+      }
+
+      if (phone && existing.phone === phone) {
+        return res
+          .status(409)
+          .json({ error: "Mobile number already registered." });
+      }
     }
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
@@ -173,7 +209,7 @@ const createUser = async (req, res, next) => {
       phone: phone || undefined,
       passwordHash,
       role,
-      status: 'active', // Admin-created accounts are active immediately
+      status: "active", // Admin-created accounts are active immediately
     });
 
     // --- Send welcome/credentials email via Nodemailer ---
@@ -187,11 +223,18 @@ const createUser = async (req, res, next) => {
       }
     }
 
-    logger.info(`User created: ${user.username} (role=${role}) by ${requesterRole}`);
+    logger.info(
+      `User created: ${user.username} (role=${role}) by ${requesterRole}`,
+    );
 
     res.status(201).json({
-      message: `${role.replace('_', ' ')} account created successfully.${email ? ' Welcome email sent.' : ''}`,
-      user: { id: user._id, username: user.username, email: user.email, role: user.role },
+      message: `${role.replace("_", " ")} account created successfully.${email ? " Welcome email sent." : ""}`,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
     });
   } catch (err) {
     if (err.code === 11000) {
@@ -229,9 +272,9 @@ const verifyOtp = async (req, res, next) => {
     // DEV STATIC OTP — Remove this block when Firebase OTP is enabled.
     // Accepts "12345" as a valid OTP for development/testing purposes.
     // -----------------------------------------------------------------
-    const DEV_STATIC_OTP = '123456';
+    const DEV_STATIC_OTP = "123456";
     if (otp !== DEV_STATIC_OTP) {
-      return res.status(400).json({ error: 'Invalid OTP code.' });
+      return res.status(400).json({ error: "Invalid OTP code." });
     }
     // -----------------------------------------------------------------
 
@@ -239,11 +282,13 @@ const verifyOtp = async (req, res, next) => {
     const user = await User.findOne({ phone });
 
     if (!user) {
-      return res.status(404).json({ error: 'No account found for this phone number.' });
+      return res
+        .status(404)
+        .json({ error: "No account found for this phone number." });
     }
 
-    if (user.status === 'active') {
-      return res.status(400).json({ error: 'Account is already verified.' });
+    if (user.status === "active") {
+      return res.status(400).json({ error: "Account is already verified." });
     }
 
     // -----------------------------------------------------------------
@@ -268,15 +313,17 @@ const verifyOtp = async (req, res, next) => {
     // -----------------------------------------------------------------
 
     // Activate the user
-    user.status = 'active';
+    user.status = "active";
     await user.save();
 
     const token = signToken(user);
 
-    logger.info(`Phone verified and account activated: ${user.username} (phone=${phone})`);
+    logger.info(
+      `Phone verified and account activated: ${user.username} (phone=${phone})`,
+    );
 
     res.status(200).json({
-      message: 'Phone verified successfully. Account is now active.',
+      message: "Phone verified successfully. Account is now active.",
       token,
       user: {
         id: user._id,
@@ -284,7 +331,7 @@ const verifyOtp = async (req, res, next) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
-        status: 'active',
+        status: "active",
       },
     });
   } catch (err) {
@@ -303,7 +350,8 @@ const verifyOtp = async (req, res, next) => {
 const resendOtp = async (req, res, next) => {
   try {
     res.status(200).json({
-      message: 'OTP resend is handled on the frontend via Firebase. Call signInWithPhoneNumber() again.',
+      message:
+        "OTP resend is handled on the frontend via Firebase. Call signInWithPhoneNumber() again.",
     });
   } catch (err) {
     next(err);
@@ -316,7 +364,7 @@ const resendOtp = async (req, res, next) => {
 const requestPasswordReset = async (req, res, next) => {
   try {
     // TODO: Implement password reset — send reset link via Nodemailer
-    res.status(501).json({ message: 'Password reset is not yet implemented.' });
+    res.status(501).json({ message: "Password reset is not yet implemented." });
   } catch (err) {
     next(err);
   }
@@ -328,7 +376,9 @@ const requestPasswordReset = async (req, res, next) => {
 const confirmPasswordReset = async (req, res, next) => {
   try {
     // TODO: Validate reset token, update password
-    res.status(501).json({ message: 'Password reset confirmation is not yet implemented.' });
+    res
+      .status(501)
+      .json({ message: "Password reset confirmation is not yet implemented." });
   } catch (err) {
     next(err);
   }
@@ -340,7 +390,7 @@ const confirmPasswordReset = async (req, res, next) => {
 const logout = async (req, res, next) => {
   try {
     // Stateless JWT — client simply discards the token.
-    res.status(200).json({ message: 'Logged out successfully.' });
+    res.status(200).json({ message: "Logged out successfully." });
   } catch (err) {
     next(err);
   }
