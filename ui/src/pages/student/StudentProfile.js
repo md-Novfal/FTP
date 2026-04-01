@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
-  Typography, Box, TextField, Button, Paper, Grid, Card, CardContent,
-  CircularProgress, Tabs, Tab, LinearProgress, Alert, Chip,
+  Typography, Box, TextField, Button, Grid, Card, CardContent,
+  CircularProgress, Tabs, Tab, LinearProgress, Chip,
 } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import { useDispatch } from 'react-redux';
@@ -221,7 +221,7 @@ function StudentProfile() {
         <CardContent sx={{ p: 4 }}>
           <Box component="form" id="profile-form" onSubmit={handleSubmit(onSubmit)}>
             {/* Personal Info Tab */}
-            {activeTab === 0 && (
+            <Box sx={{ display: activeTab === 0 ? 'block' : 'none' }}>
               <Box>
                 <Typography variant="h6" fontWeight={600} sx={{ color: 'primary.main', mb: 3 }}>
                   Personal Information
@@ -318,10 +318,10 @@ function StudentProfile() {
                   </Grid>
                 </Grid>
               </Box>
-            )}
+            </Box>
 
             {/* Academic Details Tab */}
-            {activeTab === 1 && (
+            <Box sx={{ display: activeTab === 1 ? 'block' : 'none' }}>
               <Box>
                 <Typography variant="h6" fontWeight={600} sx={{ color: 'primary.main', mb: 3 }}>
                   Academic Details
@@ -397,10 +397,10 @@ function StudentProfile() {
                   </Grid>
                 </Grid>
               </Box>
-            )}
+            </Box>
 
             {/* Passport & Address Tab */}
-            {activeTab === 2 && (
+            <Box sx={{ display: activeTab === 2 ? 'block' : 'none' }}>
               <Box>
                 <Typography variant="h6" fontWeight={600} sx={{ color: 'primary.main', mb: 3 }}>
                   Passport & Address
@@ -495,7 +495,7 @@ function StudentProfile() {
                   </Grid>
                 </Grid>
               </Box>
-            )}
+            </Box>
           </Box>
         </CardContent>
 

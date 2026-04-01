@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   Typography, Box, CircularProgress, Chip, MenuItem, Select, FormControl, InputLabel,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper,
@@ -7,11 +7,14 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import BlockIcon from '@mui/icons-material/Block';
 import AddIcon from '@mui/icons-material/Add';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import { showSnackbar } from '../../store/slices/uiSlice';
 import { selectCurrentUser } from '../../store/slices/authSlice';
 import api from '../../services/api';
+import ConfirmModal from '../../components/common/ConfirmModal';
 
 const ROLE_COLOR = {
   super_admin: 'error',
@@ -40,17 +43,19 @@ function AdminUsers() {
 
   const [openDialog, setOpenDialog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [confirmModal, setConfirmModal] = useState({ open: false, userId: null });
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
 
   const allowedRoles = currentUser?.role === 'super_admin'
     ? ['admin', 'agency']
     : ['agency'];
 
-  const fetchUsers = (role = filterRole, searchTerm = search) => {
+  const fetchUsers = useCallback(() => {
     setLoading(true);
     const params = { limit: pageSize, skip: page * pageSize };
-    if (role) params.role = role;
-    if (searchTerm) params.search = searchTerm;
+    if (filterRole) params.role = filterRole;
+    if (search) params.search = search;
     api.get('/users', { params })
       .then((data) => {
         setUsers(data?.users ?? []);
@@ -58,20 +63,25 @@ function AdminUsers() {
       })
       .catch(() => {})
       .finally(() => setLoading(false));
-  };
+  }, [filterRole, search, page, pageSize]);
 
-  useEffect(() => { fetchUsers(filterRole, search); }, [filterRole, search, page, pageSize]);
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   const handleSearch = () => {
     setSearch(searchInput);
     setPage(0);
   };
 
-  const handleDeactivate = async (userId) => {
-    if (!window.confirm('Deactivate this user?')) return;
+  const handleDeactivate = (userId) => {
+    setConfirmModal({ open: true, userId });
+  };
+
+  const handleConfirmDeactivate = async () => {
+    const userId = confirmModal.userId;
+    setConfirmModal({ open: false, userId: null });
     try {
       await api.delete(`/users/${userId}`);
-      fetchUsers(filterRole, search);
+      fetchUsers();
       dispatch(showSnackbar({ message: 'User deactivated successfully.', severity: 'success' }));
     } catch (err) {
       dispatch(showSnackbar({ message: err.response?.data?.error || 'Failed to deactivate user.', severity: 'error' }));
@@ -85,7 +95,7 @@ function AdminUsers() {
       setOpenDialog(false);
       reset();
       dispatch(showSnackbar({ message: `${data.role} account created successfully!`, severity: 'success' }));
-      fetchUsers(filterRole, search);
+      fetchUsers();
     } catch (err) {
       dispatch(showSnackbar({ message: err.response?.data?.error || 'Failed to create user.', severity: 'error' }));
     } finally {
@@ -246,7 +256,7 @@ function AdminUsers() {
             />
             <TextField
               label="Password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               {...register('password', {
                 required: 'Password is required',
                 minLength: { value: 8, message: 'Password must be at least 8 characters' },
@@ -255,6 +265,15 @@ function AdminUsers() {
               helperText={errors.password?.message}
               fullWidth
               size="small"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPassword((v) => !v)} edge="end" size="small">
+                      {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             <FormControl fullWidth size="small">
               <InputLabel>Role</InputLabel>
@@ -279,6 +298,15 @@ function AdminUsers() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ConfirmModal
+        open={confirmModal.open}
+        title="Deactivate User"
+        message="Are you sure you want to deactivate this user?"
+        confirmLabel="Deactivate"
+        onConfirm={handleConfirmDeactivate}
+        onCancel={() => setConfirmModal({ open: false, userId: null })}
+      />
     </Box>
   );
 }

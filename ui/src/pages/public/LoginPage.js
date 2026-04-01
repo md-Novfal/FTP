@@ -1,9 +1,11 @@
-import React from 'react';
-import { Container, Box, Typography, TextField, Button, Paper, Link as MuiLink, Alert } from '@mui/material';
+import React, { useState } from 'react';
+import { Container, Box, Typography, TextField, Button, Paper, Link as MuiLink, Alert, InputAdornment, IconButton } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { login, selectAuthLoading, selectAuthError } from '../../store/slices/authSlice';
 
 function LoginPage() {
@@ -12,6 +14,7 @@ function LoginPage() {
   const loading = useSelector(selectAuthLoading);
   const error = useSelector(selectAuthError);
   const { register, handleSubmit, formState: { errors } } = useForm();
+  const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = async (data) => {
     const result = await dispatch(login({ username: data.username.trim(), password: data.password }));
@@ -111,7 +114,7 @@ function LoginPage() {
                 error={!!errors.password}
                 helperText={errors.password?.message}
                 fullWidth
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 placeholder="Enter your password"
                 variant="outlined"
@@ -120,6 +123,15 @@ function LoginPage() {
                   '& .MuiOutlinedInput-root': {
                     borderRadius: '10px',
                   },
+                }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={() => setShowPassword((v) => !v)} edge="end">
+                        {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
                 }}
               />
             </Box>

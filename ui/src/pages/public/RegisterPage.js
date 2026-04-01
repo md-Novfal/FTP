@@ -1,9 +1,11 @@
-import React from 'react';
-import { Container, Box, Typography, TextField, Button, Paper, Alert, Link as MuiLink } from '@mui/material';
+import React, { useState } from 'react';
+import { Container, Box, Typography, TextField, Button, Paper, Alert, Link as MuiLink, InputAdornment, IconButton } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { register as registerAction, selectAuthLoading, selectAuthError } from '../../store/slices/authSlice';
 
 function RegisterPage() {
@@ -13,6 +15,8 @@ function RegisterPage() {
   const error = useSelector(selectAuthError);
   const { register, handleSubmit, watch, formState: { errors } } = useForm();
   const password = watch('password');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const onSubmit = async (data) => {
     const result = await dispatch(registerAction({
@@ -143,7 +147,13 @@ function RegisterPage() {
                   {field.label}
                 </Typography>
                 <TextField
-                  type={field.type || 'text'}
+                  type={
+                    field.name === 'password'
+                      ? (showPassword ? 'text' : 'password')
+                      : field.name === 'confirmPassword'
+                      ? (showConfirmPassword ? 'text' : 'password')
+                      : (field.type || 'text')
+                  }
                   placeholder={field.placeholder}
                   {...register(field.name, field.validation)}
                   error={!!errors[field.name]}
@@ -157,6 +167,28 @@ function RegisterPage() {
                       borderRadius: '10px',
                     },
                   }}
+                  InputProps={
+                    field.name === 'password' || field.name === 'confirmPassword'
+                      ? {
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <IconButton
+                                onClick={() =>
+                                  field.name === 'password'
+                                    ? setShowPassword((v) => !v)
+                                    : setShowConfirmPassword((v) => !v)
+                                }
+                                edge="end"
+                              >
+                                {(field.name === 'password' ? showPassword : showConfirmPassword)
+                                  ? <VisibilityOffIcon />
+                                  : <VisibilityIcon />}
+                              </IconButton>
+                            </InputAdornment>
+                          ),
+                        }
+                      : undefined
+                  }
                 />
               </Box>
             ))}

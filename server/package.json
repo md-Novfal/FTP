@@ -8,8 +8,13 @@
     "dev": "nodemon src/index.js",
     "test": "mocha --recursive tests/ --exit",
     "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
     "seed": "node src/scripts/seed.js",
-    "seed:demo": "node src/scripts/seedDemo.js"
+    "seed:demo": "node src/scripts/seedDemo.js",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "src/**/*.js": "eslint --max-warnings=0"
   },
   "dependencies": {
     "@google-cloud/storage": "^7.19.0",
@@ -32,6 +37,8 @@
   "devDependencies": {
     "chai": "^5.1.1",
     "eslint": "^9.7.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "mocha": "^10.6.0",
     "nodemon": "^3.1.4",
     "supertest": "^7.0.0"

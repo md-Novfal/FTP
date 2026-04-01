@@ -1,10 +1,10 @@
 const logger = require('../config/logger');
 
-const notFound = (req, res, next) => {
+const notFound = (req, res, _next) => {
   res.status(404).json({ error: `Route ${req.originalUrl} not found` });
 };
 
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res, _next) => {
   const status = err.status || err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
 
